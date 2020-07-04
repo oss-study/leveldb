@@ -86,7 +86,9 @@ class LEVELDB_EXPORT Slice {
   }
 
  private:
+  // 数据指针
   const char* data_;
+  // 数据长度
   size_t size_;
 };
 
