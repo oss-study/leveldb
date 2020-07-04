@@ -17,6 +17,7 @@ class SequentialFile;
 
 namespace log {
 
+// 这个文件实现了预写日志（WAL）的读取
 class Reader {
  public:
   // Interface for reporting errors.
@@ -85,8 +86,11 @@ class Reader {
   void ReportCorruption(uint64_t bytes, const char* reason);
   void ReportDrop(uint64_t bytes, const Status& reason);
 
+  // 读取的文件
   SequentialFile* const file_;
+  // 报告错误的对象
   Reporter* const reporter_;
+  // 校验值
   bool const checksum_;
   char* const backing_store_;
   Slice buffer_;

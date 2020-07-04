@@ -283,6 +283,8 @@ class LEVELDB_EXPORT WritableFile {
 
   virtual ~WritableFile();
 
+  // 纯虚函数，由用户自己实现，且必须提供缓冲区
+  // 在 util/env_posix.cc 文件中也有相关实现
   virtual Status Append(const Slice& data) = 0;
   virtual Status Close() = 0;
   virtual Status Flush() = 0;

@@ -18,6 +18,8 @@
 #include "port/port.h"
 
 namespace leveldb {
+// Varint 是变长字节编码的无符号整型实现
+// 如果当前字节的最高位是 1，则表示后面的字节也属于这个整数；如果最高位是 0，则表示该整数已经结束。
 
 // Standard Put... routines append to a string
 void PutFixed32(std::string* dst, uint32_t value);

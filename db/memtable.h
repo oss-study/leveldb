@@ -17,6 +17,7 @@ namespace leveldb {
 class InternalKeyComparator;
 class MemTableIterator;
 
+// Memtable 实际上是对 SkipList 的封装
 class MemTable {
  public:
   // MemTables are reference counted.  The initial reference count
@@ -27,9 +28,13 @@ class MemTable {
   MemTable& operator=(const MemTable&) = delete;
 
   // Increase reference count.
+  // 引用计数器
   void Ref() { ++refs_; }
 
   // Drop reference count.  Delete if no more references exist.
+  // 这个引用计数器是手动实现的
+  // 所以需要用户在使用 Memtable 时调用 Ref() 来增加引用计数
+  // 引用结束后调用 Unref() 来减少引用计数，当引用计数 <= 0 时则销毁
   void Unref() {
     --refs_;
     assert(refs_ >= 0);

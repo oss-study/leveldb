@@ -54,12 +54,15 @@ class SkipList {
 
   // Insert key into the list.
   // REQUIRES: nothing that compares equal to key is currently in the list.
+  // 插入 key
   void Insert(const Key& key);
 
   // Returns true iff an entry that compares equal to key is in the list.
+  // 检查 SkipList 中是否包含某个 key
   bool Contains(const Key& key) const;
 
   // Iteration over the contents of a skip list
+  // SkipList 的迭代器
   class Iterator {
    public:
     // Initialize an iterator over the specified list.
@@ -79,6 +82,7 @@ class SkipList {
 
     // Advances to the previous position.
     // REQUIRES: Valid()
+    // Prev() 通过 FindLessThan() 来找到前一个节点，实际为执行二次查找
     void Prev();
 
     // Advance to the first entry with a key >= target
@@ -148,6 +152,7 @@ struct SkipList<Key, Comparator>::Node {
 
   Key const key;
 
+  // Node 只有 Next 指针，没有实现 Prev 指针
   // Accessors/mutators for links.  Wrapped in methods so we can
   // add the appropriate barriers as necessary.
   Node* Next(int n) {
@@ -164,6 +169,7 @@ struct SkipList<Key, Comparator>::Node {
   }
 
   // No-barrier variants that can be safely used in a few locations.
+  // 多线程不安全的
   Node* NoBarrier_Next(int n) {
     assert(n >= 0);
     return next_[n].load(std::memory_order_relaxed);
@@ -257,6 +263,8 @@ bool SkipList<Key, Comparator>::KeyIsAfterNode(const Key& key, Node* n) const {
   return (n != nullptr) && (compare_(n->key, key) < 0);
 }
 
+// FindGreaterOrEqual() 方法在返回比指定 key 大于或等于的节点时，可以选择性地将该节点的 prev 指针保存到 Node** prev 中，返回给用户
+// 因此 Node 中不需要 prev 指针移动查询，节约了内存
 template <typename Key, class Comparator>
 typename SkipList<Key, Comparator>::Node*
 SkipList<Key, Comparator>::FindGreaterOrEqual(const Key& key,
@@ -333,6 +341,7 @@ SkipList<Key, Comparator>::SkipList(Comparator cmp, Arena* arena)
   }
 }
 
+// Insert() 方法需要调用者在外部进行多线程写入同步
 template <typename Key, class Comparator>
 void SkipList<Key, Comparator>::Insert(const Key& key) {
   // TODO(opt): We can use a barrier-free variant of FindGreaterOrEqual()
@@ -343,6 +352,7 @@ void SkipList<Key, Comparator>::Insert(const Key& key) {
   // Our data structure does not allow duplicate insertion
   assert(x == nullptr || !Equal(key, x->key));
 
+  // 获取随机高度
   int height = RandomHeight();
   if (height > GetMaxHeight()) {
     for (int i = GetMaxHeight(); i < height; i++) {
