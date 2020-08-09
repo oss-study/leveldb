@@ -12,6 +12,7 @@
 
 namespace leveldb {
 
+// 这个文件实现了 HASH 函数
 uint32_t Hash(const char* data, size_t n, uint32_t seed);
 
 }  // namespace leveldb

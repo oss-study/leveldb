@@ -15,6 +15,8 @@
 // they want something more sophisticated (like scan-resistance, a
 // custom eviction policy, variable cache sizing, etc.)
 
+// LevelDB 中使用的是最近最少使用缓存（Least Recently Used Cache，LRU）
+
 #ifndef STORAGE_LEVELDB_INCLUDE_CACHE_H_
 #define STORAGE_LEVELDB_INCLUDE_CACHE_H_
 
@@ -29,6 +31,7 @@ class LEVELDB_EXPORT Cache;
 
 // Create a new cache with a fixed size capacity.  This implementation
 // of Cache uses a least-recently-used eviction policy.
+// 工厂函数，可以生产一个 LRUCache
 LEVELDB_EXPORT Cache* NewLRUCache(size_t capacity);
 
 class LEVELDB_EXPORT Cache {
@@ -43,6 +46,7 @@ class LEVELDB_EXPORT Cache {
   virtual ~Cache();
 
   // Opaque handle to an entry stored in the cache.
+  // 实际上作为指针使用，增强语义
   struct Handle {};
 
   // Insert a mapping from key->value into the cache and assign it
