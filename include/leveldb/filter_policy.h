@@ -13,6 +13,8 @@
 // Most people will want to use the builtin bloom filter support (see
 // NewBloomFilterPolicy() below).
 
+// 这个文件定义了 Filter 的基类
+
 #ifndef STORAGE_LEVELDB_INCLUDE_FILTER_POLICY_H_
 #define STORAGE_LEVELDB_INCLUDE_FILTER_POLICY_H_
 
@@ -40,6 +42,7 @@ class LEVELDB_EXPORT FilterPolicy {
   //
   // Warning: do not change the initial contents of *dst.  Instead,
   // append the newly constructed filter to *dst.
+  // 创建 filter
   virtual void CreateFilter(const Slice* keys, int n,
                             std::string* dst) const = 0;
 
@@ -48,6 +51,8 @@ class LEVELDB_EXPORT FilterPolicy {
   // the key was in the list of keys passed to CreateFilter().
   // This method may return true or false if the key was not on the
   // list, but it should aim to return false with a high probability.
+  // 判断 key 是否在 filter 中，但是可能会有失败的概率
+  // 如果 Key 在 filter 里，那么一定会返回 true.如果不在，那么有小概率也会返回 true
   virtual bool KeyMayMatch(const Slice& key, const Slice& filter) const = 0;
 };
 
@@ -65,6 +70,7 @@ class LEVELDB_EXPORT FilterPolicy {
 // ignores trailing spaces, it would be incorrect to use a
 // FilterPolicy (like NewBloomFilterPolicy) that does not ignore
 // trailing spaces in keys.
+// 使用者可以替换布隆过滤器
 LEVELDB_EXPORT const FilterPolicy* NewBloomFilterPolicy(int bits_per_key);
 
 }  // namespace leveldb

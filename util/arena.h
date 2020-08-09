@@ -33,6 +33,7 @@ class Arena {
 
   // Returns an estimate of the total memory usage of data allocated
   // by the arena.
+  // 查询内存使用
   size_t MemoryUsage() const {
     return memory_usage_.load(std::memory_order_relaxed);
   }

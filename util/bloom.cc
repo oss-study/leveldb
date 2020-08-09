@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
+// 这个文件实现了一个布隆过滤器
+
 #include "leveldb/filter_policy.h"
 
 #include "leveldb/slice.h"
@@ -16,6 +18,7 @@ static uint32_t BloomHash(const Slice& key) {
 
 class BloomFilterPolicy : public FilterPolicy {
  public:
+  // explicit关键字用来修饰类的构造函数，不能发生相应的隐式类型转换
   explicit BloomFilterPolicy(int bits_per_key) : bits_per_key_(bits_per_key) {
     // We intentionally round down to reduce probing cost a little bit
     k_ = static_cast<size_t>(bits_per_key * 0.69);  // 0.69 =~ ln(2)
@@ -80,7 +83,9 @@ class BloomFilterPolicy : public FilterPolicy {
   }
 
  private:
+  // 每个 key 的大小
   size_t bits_per_key_;
+  // 布隆过滤器中哈希函数的数量
   size_t k_;
 };
 }  // namespace
