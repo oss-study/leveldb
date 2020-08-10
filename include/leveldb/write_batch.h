@@ -18,6 +18,9 @@
 // non-const method, all threads accessing the same WriteBatch must use
 // external synchronization.
 
+// 这个文件声明了 batch 批量操作
+// WriteBatch 将所有的修改和删除操作均存储到一个字符串中，进行批量迭代
+
 #ifndef STORAGE_LEVELDB_INCLUDE_WRITE_BATCH_H_
 #define STORAGE_LEVELDB_INCLUDE_WRITE_BATCH_H_
 
@@ -67,14 +70,18 @@ class LEVELDB_EXPORT WriteBatch {
   // This runs in O(source size) time. However, the constant factor is better
   // than calling Iterate() over the source batch with a Handler that replicates
   // the operations into this batch.
+  // Append 方法可以将其他 WriteBatch 合并
   void Append(const WriteBatch& source);
 
   // Support for iterating over the contents of a batch.
+  // 迭代函数，按顺序将 rep_ 中存储的键值对操作放到 hander 上执行
   Status Iterate(Handler* handler) const;
 
  private:
+  // 预先定义一个友元类，WriteBatchInternal 的所有成员函数就都可以访问类 WriteBatch 对象的私有成员
   friend class WriteBatchInternal;
 
+  // rep_ 的前12个字节定义为 Header，存储着 sequence number 和 count。
   std::string rep_;  // See comment in write_batch.cc for the format of rep_
 };
 

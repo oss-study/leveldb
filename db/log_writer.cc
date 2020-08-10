@@ -40,7 +40,7 @@ Status Writer::AddRecord(const Slice& slice) {
   // zero-length record
   Status s;
   bool begin = true;
-  // 注意如果 slice 是空的，也会迭代一次，保存一个长度为 0 的记录
+  // 注意如果 Slice 是空的，也会迭代一次，保存一个长度为 0 的记录
   do {
     const int leftover = kBlockSize - block_offset_;
     assert(leftover >= 0);

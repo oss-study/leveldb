@@ -39,6 +39,7 @@ void WriteBatch::Clear() {
 
 size_t WriteBatch::ApproximateSize() const { return rep_.size(); }
 
+// 按照顺序将 rep_ 中存储的键值对操作放到 hander 上执行
 Status WriteBatch::Iterate(Handler* handler) const {
   Slice input(rep_);
   if (input.size() < kHeader) {
@@ -96,7 +97,9 @@ void WriteBatchInternal::SetSequence(WriteBatch* b, SequenceNumber seq) {
 }
 
 void WriteBatch::Put(const Slice& key, const Slice& value) {
+  // batch 操作数量加 1
   WriteBatchInternal::SetCount(this, WriteBatchInternal::Count(this) + 1);
+  // 写入操作类型
   rep_.push_back(static_cast<char>(kTypeValue));
   PutLengthPrefixedSlice(&rep_, key);
   PutLengthPrefixedSlice(&rep_, value);
@@ -112,6 +115,8 @@ void WriteBatch::Append(const WriteBatch& source) {
   WriteBatchInternal::Append(this, &source);
 }
 
+// 将 Put 和 Delete 转到 MemTable（内存数据库） 上执行
+// 实现 handle 解耦
 namespace {
 class MemTableInserter : public WriteBatch::Handler {
  public:
@@ -129,6 +134,7 @@ class MemTableInserter : public WriteBatch::Handler {
 };
 }  // namespace
 
+// 构造 MemTableInserter
 Status WriteBatchInternal::InsertInto(const WriteBatch* b, MemTable* memtable) {
   MemTableInserter inserter;
   inserter.sequence_ = WriteBatchInternal::Sequence(b);

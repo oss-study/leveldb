@@ -18,6 +18,7 @@ class WritableFile;
 namespace log {
 
 // 这个文件实现了预写日志（WAL）的写入
+
 class Writer {
  public:
   // Create a writer that will append data to "*dest".
