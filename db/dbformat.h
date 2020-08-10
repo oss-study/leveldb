@@ -64,8 +64,10 @@ typedef uint64_t SequenceNumber;
 
 // We leave eight bits empty at the bottom so a type and sequence#
 // can be packed together into 64-bits.
+// SequenceNumber 定义为 uint64 但是最大只有 2^56，末 8 位用于存储 ValueType。
 static const SequenceNumber kMaxSequenceNumber = ((0x1ull << 56) - 1);
 
+// 对 User Key 的封装
 struct ParsedInternalKey {
   Slice user_key;
   SequenceNumber sequence;
@@ -83,12 +85,14 @@ inline size_t InternalKeyEncodingLength(const ParsedInternalKey& key) {
 }
 
 // Append the serialization of "key" to *result.
+// 将 ParsedInternalKey 转为字符串
 void AppendInternalKey(std::string* result, const ParsedInternalKey& key);
 
 // Attempt to parse an internal key from "internal_key".  On success,
 // stores the parsed data in "*result", and returns true.
 //
 // On error, returns false, leaves "*result" in an undefined state.
+// 将字符串包装成 ParsedInternalKey
 bool ParseInternalKey(const Slice& internal_key, ParsedInternalKey* result);
 
 // Returns the user key portion of an internal key.
@@ -131,6 +135,7 @@ class InternalFilterPolicy : public FilterPolicy {
 // Modules in this directory should keep internal keys wrapped inside
 // the following class instead of plain strings so that we do not
 // incorrectly use string comparisons instead of an InternalKeyComparator.
+// 和 ParsedInternalKey 一样，但是直接使用字符串 rep_ 存储 User Key 和合成序列号
 class InternalKey {
  private:
   std::string rep_;
@@ -181,6 +186,7 @@ inline bool ParseInternalKey(const Slice& internal_key,
 }
 
 // A helper class useful for DBImpl::Get()
+// 查询某个 key 
 class LookupKey {
  public:
   // Initialize *this for looking up user_key at a snapshot with

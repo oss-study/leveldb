@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
+// 这个文件定义了一个比较器
+
 #ifndef STORAGE_LEVELDB_INCLUDE_COMPARATOR_H_
 #define STORAGE_LEVELDB_INCLUDE_COMPARATOR_H_
 
@@ -25,6 +27,7 @@ class LEVELDB_EXPORT Comparator {
   //   < 0 iff "a" < "b",
   //   == 0 iff "a" == "b",
   //   > 0 iff "a" > "b"
+  // 比较器基类，比较两个 Slice 大小
   virtual int Compare(const Slice& a, const Slice& b) const = 0;
 
   // The name of the comparator.  Used to check for comparator

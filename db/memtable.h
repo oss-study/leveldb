@@ -24,6 +24,7 @@ class MemTable {
   // is zero and the caller must call Ref() at least once.
   explicit MemTable(const InternalKeyComparator& comparator);
 
+  // 禁止拷贝构造与赋值操作符
   MemTable(const MemTable&) = delete;
   MemTable& operator=(const MemTable&) = delete;
 
@@ -45,6 +46,7 @@ class MemTable {
 
   // Returns an estimate of the number of bytes of data in use by this
   // data structure. It is safe to call when MemTable is being modified.
+  // 返回内存池的内存使用量
   size_t ApproximateMemoryUsage();
 
   // Return an iterator that yields the contents of the memtable.
@@ -71,19 +73,27 @@ class MemTable {
   friend class MemTableIterator;
   friend class MemTableBackwardIterator;
 
+  // KeyComparator 是对 InternalKeyComparator 的封装
   struct KeyComparator {
     const InternalKeyComparator comparator;
+    // 不能发生相应的隐式类型转换
     explicit KeyComparator(const InternalKeyComparator& c) : comparator(c) {}
     int operator()(const char* a, const char* b) const;
   };
 
+  // 跳跃表
   typedef SkipList<const char*, KeyComparator> Table;
 
+  // 析构函数是私有的，只有 Unref() 能调用
   ~MemTable();  // Private since only Unref() should be used to delete it
 
+  // 比较器
   KeyComparator comparator_;
+  // 引用计数
   int refs_;
+  // 内存池
   Arena arena_;
+  // 跳跃表
   Table table_;
 };
 

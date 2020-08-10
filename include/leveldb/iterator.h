@@ -12,6 +12,8 @@
 // non-const method, all threads accessing the same Iterator must use
 // external synchronization.
 
+// 这个文件声明了迭代器基类
+
 #ifndef STORAGE_LEVELDB_INCLUDE_ITERATOR_H_
 #define STORAGE_LEVELDB_INCLUDE_ITERATOR_H_
 
