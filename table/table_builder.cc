@@ -38,11 +38,17 @@ struct TableBuilder::Rep {
   Options options;
   Options index_block_options;
   WritableFile* file;
+  // 文件偏移量
   uint64_t offset;
   Status status;
+  // 存储键值对的 BlockBuilder
   BlockBuilder data_block;
+  // 存储元数据的 BlockBuilder
   BlockBuilder index_block;
+  // 当前区块的最后一个 key，当区块达到阈值时，
+  // 将 Block 的 last_key 作为 Key，将 offset 和 size 作为 Value 加入到 index_block_ 中
   std::string last_key;
+  // 当前区块的键值对数量
   int64_t num_entries;
   bool closed;  // Either Finish() or Abandon() has been called.
   FilterBlockBuilder* filter_block;
@@ -56,6 +62,7 @@ struct TableBuilder::Rep {
   // blocks.
   //
   // Invariant: r->pending_index_entry is true only if data_block is empty.
+  // 只有 data_block 为空时才是 true
   bool pending_index_entry;
   BlockHandle pending_handle;  // Handle to add to index block
 
@@ -91,6 +98,7 @@ Status TableBuilder::ChangeOptions(const Options& options) {
   return Status::OK();
 }
 
+// 向 Sorted Table 添加一个键值对
 void TableBuilder::Add(const Slice& key, const Slice& value) {
   Rep* r = rep_;
   assert(!r->closed);
@@ -99,9 +107,12 @@ void TableBuilder::Add(const Slice& key, const Slice& value) {
     assert(r->options.comparator->Compare(key, Slice(r->last_key)) > 0);
   }
 
+  // 如果当前节点是空的
   if (r->pending_index_entry) {
     assert(r->data_block.empty());
+    // 寻找共同前缀
     r->options.comparator->FindShortestSeparator(&r->last_key, key);
+    // 写入 r->last_key 信息
     std::string handle_encoding;
     r->pending_handle.EncodeTo(&handle_encoding);
     r->index_block.Add(r->last_key, Slice(handle_encoding));
@@ -117,11 +128,13 @@ void TableBuilder::Add(const Slice& key, const Slice& value) {
   r->data_block.Add(key, value);
 
   const size_t estimated_block_size = r->data_block.CurrentSizeEstimate();
+  // 当 data_block_ 的大小超过阈值时（默认 4KB），将会把该 Block 写入文件
   if (estimated_block_size >= r->options.block_size) {
     Flush();
   }
 }
 
+// 刷新到磁盘文件
 void TableBuilder::Flush() {
   Rep* r = rep_;
   assert(!r->closed);
@@ -226,6 +239,7 @@ Status TableBuilder::Finish() {
   }
 
   // Write index block
+  // 将 index_block_ 也写入文件，对应的 index_block_handle_ 写到最后的 Footer 里
   if (ok()) {
     if (r->pending_index_entry) {
       r->options.comparator->FindShortSuccessor(&r->last_key);

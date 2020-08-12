@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
-// 这个文件定义了一个比较器
+// 这个文件声明了比较器基类
 
 #ifndef STORAGE_LEVELDB_INCLUDE_COMPARATOR_H_
 #define STORAGE_LEVELDB_INCLUDE_COMPARATOR_H_
@@ -27,7 +27,7 @@ class LEVELDB_EXPORT Comparator {
   //   < 0 iff "a" < "b",
   //   == 0 iff "a" == "b",
   //   > 0 iff "a" > "b"
-  // 比较器基类，比较两个 Slice 大小
+  // 比较两个 Slice 大小
   virtual int Compare(const Slice& a, const Slice& b) const = 0;
 
   // The name of the comparator.  Used to check for comparator
@@ -48,6 +48,7 @@ class LEVELDB_EXPORT Comparator {
   // If *start < limit, changes *start to a short string in [start,limit).
   // Simple comparator implementations may return with *start unchanged,
   // i.e., an implementation of this method that does nothing is correct.
+  // 寻找共同前缀，赋值给 start
   virtual void FindShortestSeparator(std::string* start,
                                      const Slice& limit) const = 0;
 

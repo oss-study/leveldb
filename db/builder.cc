@@ -18,6 +18,7 @@ Status BuildTable(const std::string& dbname, Env* env, const Options& options,
                   TableCache* table_cache, Iterator* iter, FileMetaData* meta) {
   Status s;
   meta->file_size = 0;
+  // 遍历迭代器
   iter->SeekToFirst();
 
   std::string fname = TableFileName(dbname, meta->number);
@@ -33,6 +34,7 @@ Status BuildTable(const std::string& dbname, Env* env, const Options& options,
     for (; iter->Valid(); iter->Next()) {
       Slice key = iter->key();
       meta->largest.DecodeFrom(key);
+      // 将键值对加入到一个 TableBuilder 对象里
       builder->Add(key, iter->value());
     }
 

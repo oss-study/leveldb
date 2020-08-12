@@ -31,6 +31,7 @@ class BytewiseComparatorImpl : public Comparator {
   void FindShortestSeparator(std::string* start,
                              const Slice& limit) const override {
     // Find length of common prefix
+    // 寻找共同前缀
     size_t min_length = std::min(start->size(), limit.size());
     size_t diff_index = 0;
     while ((diff_index < min_length) &&

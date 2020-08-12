@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
+// 二级迭代器的实现
+
 #include "table/two_level_iterator.h"
 
 #include "leveldb/table.h"
@@ -16,6 +18,8 @@ namespace {
 typedef Iterator* (*BlockFunction)(void*, const ReadOptions&, const Slice&);
 
 class TwoLevelIterator : public Iterator {
+  // Sorted Table 中存储了多个 Data Block，使用 Index Block 存储 Data Block 的索引
+  // 二级迭代器的 index_iter_ 实现对 Index Block 的迭代，第二级 data_iter_ 实现对 Data Block 的迭代
  public:
   TwoLevelIterator(Iterator* index_iter, BlockFunction block_function,
                    void* arg, const ReadOptions& options);
@@ -61,7 +65,9 @@ class TwoLevelIterator : public Iterator {
   void* arg_;
   const ReadOptions options_;
   Status status_;
+  // Index Block 的每个条目存储了 Data Block 的 max_key 和位置大小信息·
   IteratorWrapper index_iter_;
+  // 在 data_iter_ 到达边界时调用函数 SkipEmptyDataBlocksForward 和 SkipEmptyDataBlocksBackward 实现 Data Block 的前后切换。
   IteratorWrapper data_iter_;  // May be nullptr
   // If data_iter_ is non-null, then "data_block_handle_" holds the
   // "index_value" passed to block_function_ to create the data_iter_.

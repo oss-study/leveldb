@@ -497,6 +497,7 @@ Status DBImpl::RecoverLogFile(uint64_t log_number, bool last_log,
   return status;
 }
 
+// 把 imm_ 中的数据写到 Level0 Table 里
 Status DBImpl::WriteLevel0Table(MemTable* mem, VersionEdit* edit,
                                 Version* base) {
   mutex_.AssertHeld();
@@ -511,6 +512,7 @@ Status DBImpl::WriteLevel0Table(MemTable* mem, VersionEdit* edit,
   Status s;
   {
     mutex_.Unlock();
+    // 建立 Sorted Table
     s = BuildTable(dbname_, env_, options_, table_cache_, iter, &meta);
     mutex_.Lock();
   }
@@ -549,6 +551,7 @@ void DBImpl::CompactMemTable() {
   VersionEdit edit;
   Version* base = versions_->current();
   base->Ref();
+  // 把 imm_ 中的数据写到 Level0 Table 里
   Status s = WriteLevel0Table(imm_, &edit, base);
   base->Unref();
 
@@ -667,11 +670,13 @@ void DBImpl::MaybeScheduleCompaction() {
     // No work to be done
   } else {
     background_compaction_scheduled_ = true;
+    // 创建一个 Detached 线程启动 DBImpl::BGWork
     env_->Schedule(&DBImpl::BGWork, this);
   }
 }
 
 void DBImpl::BGWork(void* db) {
+  // 调用 DBImpl::BackgroundCall
   reinterpret_cast<DBImpl*>(db)->BackgroundCall();
 }
 
@@ -683,6 +688,7 @@ void DBImpl::BackgroundCall() {
   } else if (!bg_error_.ok()) {
     // No more background work after a background error.
   } else {
+    // 调用 DBImpl::BackgroundCompaction
     BackgroundCompaction();
   }
 
@@ -697,6 +703,7 @@ void DBImpl::BackgroundCall() {
 void DBImpl::BackgroundCompaction() {
   mutex_.AssertHeld();
 
+  // 如果 imm_ 非空，直接执行 CompactMemTable 返回
   if (imm_ != nullptr) {
     CompactMemTable();
     return;
@@ -1208,6 +1215,7 @@ Status DBImpl::Write(const WriteOptions& options, WriteBatch* updates) {
   }
 
   // May temporarily unlock and wait.
+  // 申请 memTable 空间
   Status status = MakeRoomForWrite(updates == nullptr);
   uint64_t last_sequence = versions_->LastSequence();
   Writer* last_writer = &w;
@@ -1318,18 +1326,22 @@ WriteBatch* DBImpl::BuildBatchGroup(Writer** last_writer) {
 
 // REQUIRES: mutex_ is held
 // REQUIRES: this thread is currently at the front of the writer queue
+// 为写入申请空间
 Status DBImpl::MakeRoomForWrite(bool force) {
   mutex_.AssertHeld();
   assert(!writers_.empty());
   bool allow_delay = !force;
   Status s;
   while (true) {
+    // 是否有后台错误，如果有就退出
     if (!bg_error_.ok()) {
       // Yield previous error
       s = bg_error_;
       break;
     } else if (allow_delay && versions_->NumLevelFiles(0) >=
                                   config::kL0_SlowdownWritesTrigger) {
+      // 如果允许延迟且现有的 L0 文件超过 8 个，则释放锁、等待 1 毫秒、再加锁锁，并且不允许再次等待；
+      // 这个操作因为写入过多，L0 合并压力大，延迟写操作
       // We are getting close to hitting a hard limit on the number of
       // L0 files.  Rather than delaying a single write by several
       // seconds when we hit the hard limit, start delaying each
@@ -1343,17 +1355,21 @@ Status DBImpl::MakeRoomForWrite(bool force) {
     } else if (!force &&
                (mem_->ApproximateMemoryUsage() <= options_.write_buffer_size)) {
       // There is room in current memtable
+      // 如果是非强制模式，并且内存数据库大小没有超出阈值，退出循环
       break;
     } else if (imm_ != nullptr) {
       // We have filled up the current memtable, but the previous
       // one is still being compacted, so we wait.
+      // 如果有正在被写入磁盘的 imMemtable，等待写入完成
       Log(options_.info_log, "Current memtable full; waiting...\n");
       background_work_finished_signal_.Wait();
     } else if (versions_->NumLevelFiles(0) >= config::kL0_StopWritesTrigger) {
+      // 现有的 L0 文件超过 12 个，停止写入，等待 L0 合并入 L1
       // There are too many level-0 files.
       Log(options_.info_log, "Too many L0 files; waiting...\n");
       background_work_finished_signal_.Wait();
     } else {
+      // 当前的 memTable 已经满了，新建一个 memTable
       // Attempt to switch to a new memtable and trigger compaction of old
       assert(versions_->PrevLogNumber() == 0);
       uint64_t new_log_number = versions_->NewFileNumber();

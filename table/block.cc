@@ -19,6 +19,7 @@ namespace leveldb {
 
 inline uint32_t Block::NumRestarts() const {
   assert(size_ >= sizeof(uint32_t));
+  // 定位到最后四字节的指针
   return DecodeFixed32(data_ + size_ - sizeof(uint32_t));
 }
 
@@ -52,6 +53,7 @@ Block::~Block() {
 //
 // If any errors are detected, returns nullptr.  Otherwise, returns a
 // pointer to the key delta (just past the three decoded values).
+// 解析键值对
 static inline const char* DecodeEntry(const char* p, const char* limit,
                                       uint32_t* shared, uint32_t* non_shared,
                                       uint32_t* value_length) {
@@ -59,10 +61,12 @@ static inline const char* DecodeEntry(const char* p, const char* limit,
   *shared = reinterpret_cast<const uint8_t*>(p)[0];
   *non_shared = reinterpret_cast<const uint8_t*>(p)[1];
   *value_length = reinterpret_cast<const uint8_t*>(p)[2];
+  // 如果 shared、non_shared、value_length 这三个字段都小于 128，尝试按字节读取以提高解析速度。
   if ((*shared | *non_shared | *value_length) < 128) {
     // Fast path: all three values are encoded in one byte each
     p += 3;
   } else {
+    // 出现较长的字段时，使用变长字节整型编码
     if ((p = GetVarint32Ptr(p, limit, shared)) == nullptr) return nullptr;
     if ((p = GetVarint32Ptr(p, limit, non_shared)) == nullptr) return nullptr;
     if ((p = GetVarint32Ptr(p, limit, value_length)) == nullptr) return nullptr;
@@ -75,15 +79,25 @@ static inline const char* DecodeEntry(const char* p, const char* limit,
 }
 
 class Block::Iter : public Iterator {
+
+  // 迭代器存储的状态信息包括 key_ 存储的共享前缀，和 value_ 存储的下个条目起点。
+  // 当发生起始点的切换时，需要先执行函数 SeekToRestartPoint 清空当前存储的状态信息，再执行函数 ParseNextKey 解析下一个键值对。 
+
  private:
   const Comparator* const comparator_;
+  // 存储 Block 的字节流
   const char* const data_;       // underlying block contents
+  // 复活点列表的偏移量
   uint32_t const restarts_;      // Offset of restart array (list of fixed32)
+  // 复活点列表的数量
   uint32_t const num_restarts_;  // Number of uint32_t entries in restart array
 
   // current_ is offset in data_ of current entry.  >= restarts_ if !Valid
+  // 当前迭代器的偏移量
   uint32_t current_;
+  // 存储 current_ 前面最近的复活点偏移量
   uint32_t restart_index_;  // Index of restart block in which current_ falls
+  // 存储键值对
   std::string key_;
   Slice value_;
   Status status_;
@@ -93,22 +107,26 @@ class Block::Iter : public Iterator {
   }
 
   // Return the offset in data_ just past the end of the current entry.
+  // 因为每一个 entry 最后存储的是 value，所以根据 value 的指针位置和大小获取偏移量。
   inline uint32_t NextEntryOffset() const {
     return (value_.data() + value_.size()) - data_;
   }
 
+  // 读取第 index 个复活点的位置
   uint32_t GetRestartPoint(uint32_t index) {
     assert(index < num_restarts_);
     return DecodeFixed32(data_ + restarts_ + index * sizeof(uint32_t));
   }
 
   void SeekToRestartPoint(uint32_t index) {
+    // 将当前的 key 清空
     key_.clear();
     restart_index_ = index;
     // current_ will be fixed by ParseNextKey();
 
     // ParseNextKey() starts at the end of value_, so set value_ accordingly
     uint32_t offset = GetRestartPoint(index);
+    // 将 value 设为复活点前的空串
     value_ = Slice(data_ + offset, 0);
   }
 
@@ -166,6 +184,7 @@ class Block::Iter : public Iterator {
     // with a key < target
     uint32_t left = 0;
     uint32_t right = num_restarts_ - 1;
+    // 在复活点上做二分查找
     while (left < right) {
       uint32_t mid = (left + right + 1) / 2;
       uint32_t region_offset = GetRestartPoint(mid);
@@ -190,6 +209,7 @@ class Block::Iter : public Iterator {
     }
 
     // Linear search (within restart block) for first key >= target
+    // 在复活点间线性查找
     SeekToRestartPoint(left);
     while (true) {
       if (!ParseNextKey()) {
@@ -223,6 +243,7 @@ class Block::Iter : public Iterator {
   }
 
   bool ParseNextKey() {
+    // 将 current_ 设为下一个键值对的起点
     current_ = NextEntryOffset();
     const char* p = data_ + current_;
     const char* limit = data_ + restarts_;  // Restarts come right after data
@@ -235,11 +256,13 @@ class Block::Iter : public Iterator {
 
     // Decode next entry
     uint32_t shared, non_shared, value_length;
+    // 解析键值对，得到需要的长度信息
     p = DecodeEntry(p, limit, &shared, &non_shared, &value_length);
     if (p == nullptr || key_.size() < shared) {
       CorruptionError();
       return false;
     } else {
+      // 恢复 key_ 并读取 value_
       key_.resize(shared);
       key_.append(p, non_shared);
       value_ = Slice(p + non_shared, value_length);

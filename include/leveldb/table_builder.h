@@ -10,6 +10,9 @@
 // non-const method, all threads accessing the same TableBuilder must use
 // external synchronization.
 
+// 多线程调用 const 方法是安全的
+// 但是多线程调用 non-const 方法需要外部进行同步
+
 #ifndef STORAGE_LEVELDB_INCLUDE_TABLE_BUILDER_H_
 #define STORAGE_LEVELDB_INCLUDE_TABLE_BUILDER_H_
 
@@ -84,6 +87,7 @@ class LEVELDB_EXPORT TableBuilder {
   void WriteBlock(BlockBuilder* block, BlockHandle* handle);
   void WriteRawBlock(const Slice& data, CompressionType, BlockHandle* handle);
 
+  // pimpl 写法，Rep 定义在 table_builder.cc 中
   struct Rep;
   Rep* rep_;
 };

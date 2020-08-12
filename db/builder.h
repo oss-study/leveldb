@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
+// 这个文件声明了建立 Sorted Table 的函数
+
 #ifndef STORAGE_LEVELDB_DB_BUILDER_H_
 #define STORAGE_LEVELDB_DB_BUILDER_H_
 
