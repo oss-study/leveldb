@@ -1478,7 +1478,7 @@ void DBImpl::GetApproximateSizes(const Range* range, int n, uint64_t* sizes) {
 
 // Default implementations of convenience methods that subclasses of DB
 // can call if they wish
-// 键值对写入与删除接口，都会被打包成 batch 操作
+// 键值对写入与删除接口，都会被打包成 WriteBatch
 Status DB::Put(const WriteOptions& opt, const Slice& key, const Slice& value) {
   WriteBatch batch;
   batch.Put(key, value);

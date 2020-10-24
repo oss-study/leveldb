@@ -39,7 +39,7 @@ uint32_t Hash(const char* data, size_t n, uint32_t seed) {
   }
 
   // Pick up remaining bytes
-  // 补充剩余字节
+  // 将剩余的 byte 计算
   switch (limit - data) {
     case 3:
       h += static_cast<uint8_t>(data[2]) << 16;

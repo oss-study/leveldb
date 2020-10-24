@@ -17,9 +17,10 @@ Arena::~Arena() {
   }
 }
 
+// 剩余空间不足时，交给 AllocateFallback 处理
 char* Arena::AllocateFallback(size_t bytes) {
-  // 如果需要分配的空间大于 kBlockSize / 4，则直接申请一个 bytes 大小的 block；
-  // 这样能保证浪费的空间小于 kBlockSize / 4
+  // 如果需要分配的空间大于 kBlockSize/4，则直接申请一个 bytes 大小的 block；
+  // 这样能保证浪费的空间小于 kBlockSize/4
   if (bytes > kBlockSize / 4) {
     // Object is more than a quarter of our block size.  Allocate it separately
     // to avoid wasting too much space in leftover bytes.

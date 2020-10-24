@@ -56,6 +56,7 @@ class Arena {
   //
   // TODO(costan): This member is accessed via atomics, but the others are
   //               accessed without any locking. Is this OK?
+  // AtomicPointer，可以采用原子屏障
   std::atomic<size_t> memory_usage_;
 };
 

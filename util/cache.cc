@@ -40,6 +40,7 @@ namespace {
 
 // An entry is a variable length heap-allocated structure.  Entries
 // are kept in a circular doubly linked list ordered by access time.
+
 // LRU 依靠双向环形链表和哈希表实现，其中双向环形链表维护 Recently 属性，哈希表维护 Used 属性。
 struct LRUHandle {
   // 缓存存储的数据，类型无关
@@ -76,6 +77,9 @@ struct LRUHandle {
 // table implementations in some of the compiler/runtime combinations
 // we have tested.  E.g., readrandom speeds up by ~5% over the g++
 // 4.4.3's builtin hashtable.
+
+// 哈希表实现
+// 当所有 Insert 进来的元素个数 elems_ 超过了数组的长度 length_，就会进行 Resize
 class HandleTable {
  public:
   HandleTable() : length_(0), elems_(0), list_(nullptr) { Resize(); }
@@ -124,6 +128,7 @@ class HandleTable {
   // Return a pointer to slot that points to a cache entry that
   // matches key/hash.  If there is no such cache entry, return a
   // pointer to the trailing slot in the corresponding linked list.
+  
   // 返回 LRUHandle** 二级指针，无论是 list_[i] 还是 entry->next_hash，均为 LRUHandle*，
   // 那么一个节点总会有一个正确的 LRUHandle* 变量指向它，该函数就返回指向这个变量的指针。
   LRUHandle** FindPointer(const Slice& key, uint32_t hash) {
@@ -373,6 +378,10 @@ void LRUCache::Prune() {
 static const int kNumShardBits = 4;
 static const int kNumShards = 1 << kNumShardBits;
 
+// 多线程调用时，每个线程访问缓冲区的时候都会将缓冲区锁住，ShardedLRUCache 内部有 16 个 LRUCache，查找 Key 时先计算 key 属于哪一个分片，
+// 分片的计算方法是取32位 hash 值的高4位，然后在相应的 LRUCache 中进行查找，这样就大大减少了多线程访问的锁开销。
+
+// ShardedLRUCache 的主要作用就是计算 hash，选择 hash 选择 LRUCache ，然后调用 LRUCache 的函数。
 class ShardedLRUCache : public Cache {
  private:
   LRUCache shard_[kNumShards];

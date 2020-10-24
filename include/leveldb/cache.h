@@ -34,6 +34,7 @@ class LEVELDB_EXPORT Cache;
 // 工厂函数，可以生产一个 LRUCache
 LEVELDB_EXPORT Cache* NewLRUCache(size_t capacity);
 
+// 这是一个抽象类，调用者既可以通过继承该 Cache 类定制自己的缓存实现，也可以直接使用内部实现的 LRUCache (../util/cache.cc)
 class LEVELDB_EXPORT Cache {
  public:
   Cache() = default;
@@ -106,6 +107,7 @@ class LEVELDB_EXPORT Cache {
   void LRU_Append(Handle* e);
   void Unref(Handle* e);
 
+  // PImpl 范式，但 cache.cc 中并没有使用到该机制，注释掉这两行不影响编译，
   struct Rep;
   Rep* rep_;
 };

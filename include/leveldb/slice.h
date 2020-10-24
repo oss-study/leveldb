@@ -86,7 +86,7 @@ class LEVELDB_EXPORT Slice {
   //   == 0 iff "*this" == "b",
   //   >  0 iff "*this" >  "b"
   // 比较两个 Slice 
-  // TODO: 为什么用 iff ?
+  // iff == "if and only if", 当且仅当
   int compare(const Slice& b) const;
 
   // Return true iff "x" is a prefix of "*this"
