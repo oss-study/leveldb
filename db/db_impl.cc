@@ -1215,12 +1215,13 @@ Status DBImpl::Write(const WriteOptions& options, WriteBatch* updates) {
   }
 
   // May temporarily unlock and wait.
-  // 申请 memTable 空间
+  // 申请 MemTable 空间
   Status status = MakeRoomForWrite(updates == nullptr);
   uint64_t last_sequence = versions_->LastSequence();
   Writer* last_writer = &w;
   if (status.ok() && updates != nullptr) {  // nullptr batch is for compactions
     WriteBatch* write_batch = BuildBatchGroup(&last_writer);
+    // 设置第一条 Record 的 sequence
     WriteBatchInternal::SetSequence(write_batch, last_sequence + 1);
     last_sequence += WriteBatchInternal::Count(write_batch);
 
@@ -1228,9 +1229,10 @@ Status DBImpl::Write(const WriteOptions& options, WriteBatch* updates) {
     // during this phase since &w is currently responsible for logging
     // and protects against concurrent loggers and concurrent writes
     // into mem_.
-    // 先追加到 WAL log_，再写入 MemTable mem_。
+    // 先追加到 WAL，再写入 MemTable
     {
       mutex_.Unlock();
+      // 追加到 WAL
       status = log_->AddRecord(WriteBatchInternal::Contents(write_batch));
       bool sync_error = false;
       if (status.ok() && options.sync) {
@@ -1239,6 +1241,7 @@ Status DBImpl::Write(const WriteOptions& options, WriteBatch* updates) {
           sync_error = true;
         }
       }
+      // 写入 MemTable
       if (status.ok()) {
         status = WriteBatchInternal::InsertInto(write_batch, mem_);
       }
@@ -1355,12 +1358,12 @@ Status DBImpl::MakeRoomForWrite(bool force) {
     } else if (!force &&
                (mem_->ApproximateMemoryUsage() <= options_.write_buffer_size)) {
       // There is room in current memtable
-      // 如果是非强制模式，并且内存数据库大小没有超出阈值，退出循环
+      // 如果是非强制模式，并且 MemTable 大小没有超出阈值，退出循环
       break;
     } else if (imm_ != nullptr) {
       // We have filled up the current memtable, but the previous
       // one is still being compacted, so we wait.
-      // 如果有正在被写入磁盘的 imMemtable，等待写入完成
+      // 如果有正在被写入磁盘的 imMemTable，等待写入完成
       Log(options_.info_log, "Current memtable full; waiting...\n");
       background_work_finished_signal_.Wait();
     } else if (versions_->NumLevelFiles(0) >= config::kL0_StopWritesTrigger) {
@@ -1369,7 +1372,7 @@ Status DBImpl::MakeRoomForWrite(bool force) {
       Log(options_.info_log, "Too many L0 files; waiting...\n");
       background_work_finished_signal_.Wait();
     } else {
-      // 当前的 memTable 已经满了，新建一个 memTable
+      // 当前的 MemTable 已经满了，新建一个 MemTable
       // Attempt to switch to a new memtable and trigger compaction of old
       assert(versions_->PrevLogNumber() == 0);
       uint64_t new_log_number = versions_->NewFileNumber();

@@ -118,8 +118,8 @@ bool MemTable::Get(const LookupKey& key, std::string* value, Status* s) {
     const char* entry = iter.key();
     uint32_t key_length;
     const char* key_ptr = GetVarint32Ptr(entry, entry + 5, &key_length);
-    // 使用 user_comparator 进一步比较两者的 User Key 是否一致
-    // 如果完全一致并且值类型不是 kTypeDeletion，就把条目中的 Value 读出来放到结果中。
+    // 使用 user_comparator 进一步比较两者的 user_key 是否一致
+    // 如果完全一致并且值类型不是 kTypeDeletion，就把记录中的 value 读出来放到结果中。
     if (comparator_.comparator.user_comparator()->Compare(
             Slice(key_ptr, key_length - 8), key.user_key()) == 0) {
       // Correct user key

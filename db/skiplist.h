@@ -5,6 +5,8 @@
 #ifndef STORAGE_LEVELDB_DB_SKIPLIST_H_
 #define STORAGE_LEVELDB_DB_SKIPLIST_H_
 
+// 跳跃表实现
+
 // Thread safety
 // -------------
 //

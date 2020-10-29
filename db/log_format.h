@@ -11,7 +11,7 @@
 namespace leveldb {
 namespace log {
 
-// 记录类型
+// 这个文件声明了预些日志（WAL）的记录类型与格式
 enum RecordType {
   // Zero is reserved for preallocated files
   // 预留字，表示预分配的文件

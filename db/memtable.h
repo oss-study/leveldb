@@ -34,7 +34,7 @@ class MemTable {
 
   // Drop reference count.  Delete if no more references exist.
   // 这个引用计数器是手动实现的
-  // 所以需要用户在使用 Memtable 时调用 Ref() 来增加引用计数
+  // 所以需要用户在使用 MemTable 时调用 Ref() 来增加引用计数
   // 引用结束后调用 Unref() 来减少引用计数，当引用计数 <= 0 时则销毁
   void Unref() {
     --refs_;
