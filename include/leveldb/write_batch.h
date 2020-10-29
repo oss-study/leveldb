@@ -19,7 +19,6 @@
 // external synchronization.
 
 // 这个文件声明了 batch 批量操作
-// WriteBatch 将所有的修改和删除操作均存储到一个字符串中，进行批量迭代
 
 #ifndef STORAGE_LEVELDB_INCLUDE_WRITE_BATCH_H_
 #define STORAGE_LEVELDB_INCLUDE_WRITE_BATCH_H_
@@ -33,6 +32,8 @@ namespace leveldb {
 
 class Slice;
 
+// WriteBatch 将所有的修改和删除操作均存储到一个字符串中，并且提供了内存数据库的迭代接口。
+// 单个字符串也可以非常方便地进行持久化。
 class LEVELDB_EXPORT WriteBatch {
  public:
   class LEVELDB_EXPORT Handler {
@@ -81,7 +82,8 @@ class LEVELDB_EXPORT WriteBatch {
   // 预先定义一个友元类，WriteBatchInternal 的所有成员函数就都可以访问类 WriteBatch 对象的私有成员
   friend class WriteBatchInternal;
 
-  // rep_ 的前12个字节定义为 Header，存储着 sequence number 和 count。
+  // rep_ 的前12个字节定义为 Header，8字节存储着第一个写操作 sequence number，4字节存储着写操作数量 count。
+  // 随后是数据 record 数组
   std::string rep_;  // See comment in write_batch.cc for the format of rep_
 };
 

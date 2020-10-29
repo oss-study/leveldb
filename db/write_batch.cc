@@ -2,12 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 //
+
+// 数据格式
 // WriteBatch::rep_ :=
 //    sequence: fixed64
 //    count: fixed32
 //    data: record[count]
 // record :=
-//    kTypeValue varstring varstring         |
+//    kTypeValue varstring varstring
 //    kTypeDeletion varstring
 // varstring :=
 //    len: varint32
@@ -39,7 +41,7 @@ void WriteBatch::Clear() {
 
 size_t WriteBatch::ApproximateSize() const { return rep_.size(); }
 
-// 按照顺序将 rep_ 中存储的键值对操作放到 hander 上执行
+// 按照顺序将 rep_ 中存储的键值对操作放到 Hander 上执行
 Status WriteBatch::Iterate(Handler* handler) const {
   Slice input(rep_);
   if (input.size() < kHeader) {
@@ -99,8 +101,9 @@ void WriteBatchInternal::SetSequence(WriteBatch* b, SequenceNumber seq) {
 void WriteBatch::Put(const Slice& key, const Slice& value) {
   // batch 操作数量加 1
   WriteBatchInternal::SetCount(this, WriteBatchInternal::Count(this) + 1);
-  // 写入操作类型
+  // 在 rep_ 中写入操作类型
   rep_.push_back(static_cast<char>(kTypeValue));
+  // 写入键值对
   PutLengthPrefixedSlice(&rep_, key);
   PutLengthPrefixedSlice(&rep_, value);
 }
@@ -116,7 +119,7 @@ void WriteBatch::Append(const WriteBatch& source) {
 }
 
 // 将 Put 和 Delete 转到 MemTable（内存数据库） 上执行
-// 实现 handle 解耦
+// 匿名空间里定义了继承自 Handler 的 MemTableInserter，将 Put 和 Delete 转移到 MemTable 上执行，实现 handle 解耦
 namespace {
 class MemTableInserter : public WriteBatch::Handler {
  public:
@@ -134,7 +137,7 @@ class MemTableInserter : public WriteBatch::Handler {
 };
 }  // namespace
 
-// 构造 MemTableInserter
+// 构造 MemTableInserter，并将 WriteBatch 写入 MemTable
 Status WriteBatchInternal::InsertInto(const WriteBatch* b, MemTable* memtable) {
   MemTableInserter inserter;
   inserter.sequence_ = WriteBatchInternal::Sequence(b);

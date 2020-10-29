@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
-// 友元类 WriteBatchInternal 的定义，实现在 write_batch.cc 中 
+// 友元类 WriteBatchInternal 的定义
 
 #ifndef STORAGE_LEVELDB_DB_WRITE_BATCH_INTERNAL_H_
 #define STORAGE_LEVELDB_DB_WRITE_BATCH_INTERNAL_H_
@@ -16,6 +16,8 @@ class MemTable;
 
 // WriteBatchInternal provides static methods for manipulating a
 // WriteBatch that we don't want in the public WriteBatch interface.
+// WriteBatch 友元类的实现，提供了一些不方便暴露出来的内部操作，可以访问 WriteBatch 唯一的私有成员 rep_
+// 实现位于 ./write_batch.cc 中
 class WriteBatchInternal {
  public:
   // Return the number of entries in the batch.
