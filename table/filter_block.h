@@ -6,6 +6,8 @@
 // filters (e.g., bloom filters) for all data blocks in the table combined
 // into a single filter block.
 
+// filterBlock 的声明
+
 #ifndef STORAGE_LEVELDB_TABLE_FILTER_BLOCK_H_
 #define STORAGE_LEVELDB_TABLE_FILTER_BLOCK_H_
 

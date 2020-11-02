@@ -19,6 +19,7 @@ static uint32_t BloomHash(const Slice& key) {
 class BloomFilterPolicy : public FilterPolicy {
  public:
   // explicit关键字用来修饰类的构造函数，不能发生相应的隐式类型转换
+  // 计算最优的哈希函数数量 k = ln2 * m/n
   explicit BloomFilterPolicy(int bits_per_key) : bits_per_key_(bits_per_key) {
     // We intentionally round down to reduce probing cost a little bit
     k_ = static_cast<size_t>(bits_per_key * 0.69);  // 0.69 =~ ln(2)
@@ -30,16 +31,19 @@ class BloomFilterPolicy : public FilterPolicy {
 
   void CreateFilter(const Slice* keys, int n, std::string* dst) const override {
     // Compute bloom filter size (in both bits and bytes)
+    // 计算需要的 bits 数量
     size_t bits = n * bits_per_key_;
 
     // For small n, we can see a very high false positive rate.  Fix it
     // by enforcing a minimum bloom filter length.
+    // 最低 64 bits
     if (bits < 64) bits = 64;
 
     size_t bytes = (bits + 7) / 8;
     bits = bytes * 8;
 
     const size_t init_size = dst->size();
+    // 写入过滤器内容，默认为 0
     dst->resize(init_size + bytes, 0);
     dst->push_back(static_cast<char>(k_));  // Remember # of probes in filter
     char* array = &(*dst)[init_size];
@@ -56,6 +60,7 @@ class BloomFilterPolicy : public FilterPolicy {
     }
   }
 
+  // 查找
   bool KeyMayMatch(const Slice& key, const Slice& bloom_filter) const override {
     const size_t len = bloom_filter.size();
     if (len < 2) return false;
