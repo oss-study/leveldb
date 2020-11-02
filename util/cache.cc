@@ -80,7 +80,7 @@ struct LRUHandle {
 
 // 哈希表实现
 // 当所有 Insert 进来的元素个数 elems_ 超过了数组的长度 length_，就会进行 Resize
-class HandleTable {
+class HandleTable { 
  public:
   HandleTable() : length_(0), elems_(0), list_(nullptr) { Resize(); }
   ~HandleTable() { delete[] list_; }

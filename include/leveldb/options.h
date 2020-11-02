@@ -97,11 +97,13 @@ struct LEVELDB_EXPORT Options {
   // block size specified here corresponds to uncompressed data.  The
   // actual size of the unit read from disk may be smaller if
   // compression is enabled.  This parameter can be changed dynamically.
+  // 一个 Block 为 4KB
   size_t block_size = 4 * 1024;
 
   // Number of keys between restart points for delta encoding of keys.
   // This parameter can be changed dynamically.  Most clients should
   // leave this parameter alone.
+  // 复活点重启数
   int block_restart_interval = 16;
 
   // Leveldb will write up to this amount of bytes to a file before
@@ -111,7 +113,8 @@ struct LEVELDB_EXPORT Options {
   // consider increasing the value.  The downside will be longer
   // compactions and hence longer latency/performance hiccups.
   // Another reason to increase this parameter might be when you are
-  // initially populating a large database.
+  // initially populating a large database.、
+  // SSTable 文件为 2MB
   size_t max_file_size = 2 * 1024 * 1024;
 
   // Compress blocks using the specified compression algorithm.  This

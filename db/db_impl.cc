@@ -497,7 +497,7 @@ Status DBImpl::RecoverLogFile(uint64_t log_number, bool last_log,
   return status;
 }
 
-// 把 imm_ 中的数据写到 Level0 Table 里
+// 把 imm_ 中的数据（可能）写到 Level0 Table 里
 Status DBImpl::WriteLevel0Table(MemTable* mem, VersionEdit* edit,
                                 Version* base) {
   mutex_.AssertHeld();
@@ -530,8 +530,10 @@ Status DBImpl::WriteLevel0Table(MemTable* mem, VersionEdit* edit,
     const Slice min_user_key = meta.smallest.user_key();
     const Slice max_user_key = meta.largest.user_key();
     if (base != nullptr) {
+      // 判断写到那一个 Level 中
       level = base->PickLevelForMemTableOutput(min_user_key, max_user_key);
     }
+    // 文件的 meta 信息
     edit->AddFile(level, meta.number, meta.file_size, meta.smallest,
                   meta.largest);
   }
@@ -670,7 +672,7 @@ void DBImpl::MaybeScheduleCompaction() {
     // No work to be done
   } else {
     background_compaction_scheduled_ = true;
-    // 创建一个 Detached 线程启动 DBImpl::BGWork
+    // 创建一个 Detached 线程启动 DBImpl::BGWork 函数
     env_->Schedule(&DBImpl::BGWork, this);
   }
 }
@@ -1343,7 +1345,7 @@ Status DBImpl::MakeRoomForWrite(bool force) {
       break;
     } else if (allow_delay && versions_->NumLevelFiles(0) >=
                                   config::kL0_SlowdownWritesTrigger) {
-      // 如果允许延迟且现有的 L0 文件超过 8 个，则释放锁、等待 1 毫秒、再加锁锁，并且不允许再次等待；
+      // 如果允许延迟且现有的 L0 文件超过 8 个，则释放锁、等待 1ms 、再加锁，并且不允许再次等待；
       // 这个操作因为写入过多，L0 合并压力大，延迟写操作
       // We are getting close to hitting a hard limit on the number of
       // L0 files.  Rather than delaying a single write by several
@@ -1372,7 +1374,7 @@ Status DBImpl::MakeRoomForWrite(bool force) {
       Log(options_.info_log, "Too many L0 files; waiting...\n");
       background_work_finished_signal_.Wait();
     } else {
-      // 当前的 MemTable 已经满了，新建一个 MemTable
+      // 当前的 MemTable 已经满了，将其冻结并新建一个 MemTable，并尝试进行后台合并
       // Attempt to switch to a new memtable and trigger compaction of old
       assert(versions_->PrevLogNumber() == 0);
       uint64_t new_log_number = versions_->NewFileNumber();
@@ -1393,6 +1395,7 @@ Status DBImpl::MakeRoomForWrite(bool force) {
       mem_ = new MemTable(internal_comparator_);
       mem_->Ref();
       force = false;  // Do not force another compaction if have room
+      // 进行 Minor Compaction
       MaybeScheduleCompaction();
     }
   }

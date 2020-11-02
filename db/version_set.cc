@@ -467,6 +467,7 @@ bool Version::OverlapInLevel(int level, const Slice* smallest_user_key,
                                smallest_user_key, largest_user_key);
 }
 
+// 判断 ImMemTable 最后写入哪个 Level
 int Version::PickLevelForMemTableOutput(const Slice& smallest_user_key,
                                         const Slice& largest_user_key) {
   int level = 0;

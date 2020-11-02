@@ -54,6 +54,7 @@ class InternalKey;
 // Value types encoded as the last component of internal keys.
 // DO NOT CHANGE THESE ENUM VALUES: they are embedded in the on-disk
 // data structures.
+// WriteBatch Record 记录操作类型
 enum ValueType { kTypeDeletion = 0x0, kTypeValue = 0x1 };
 // kValueTypeForSeek defines the ValueType that should be passed when
 // constructing a ParsedInternalKey object for seeking to a particular
@@ -67,10 +68,11 @@ typedef uint64_t SequenceNumber;
 
 // We leave eight bits empty at the bottom so a type and sequence#
 // can be packed together into 64-bits.
-// SequenceNumber 定义为 uint64 但是最大只有 2^56，末 8 位用于存储 ValueType。
+// SequenceNumber 定义为 uint64 但是最大只有 2^56-1，末 8 位用于存储 ValueType。
+// 合成序列号 == SequenceNumber + ValueType，共计 8-byte
 static const SequenceNumber kMaxSequenceNumber = ((0x1ull << 56) - 1);
 
-// 对 User Key 的封装
+// 对 User Key 的封装，包含 user_key 与 合成序列号
 struct ParsedInternalKey {
   Slice user_key;
   SequenceNumber sequence;
@@ -83,12 +85,13 @@ struct ParsedInternalKey {
 };
 
 // Return the length of the encoding of "key".
+// SequenceNumber 占用 8 字节，所以加 8
 inline size_t InternalKeyEncodingLength(const ParsedInternalKey& key) {
   return key.user_key.size() + 8;
 }
 
 // Append the serialization of "key" to *result.
-// 将 ParsedInternalKey 转为字符串
+// 将 ParsedInternalKey 转换为一个字符串
 void AppendInternalKey(std::string* result, const ParsedInternalKey& key);
 
 // Attempt to parse an internal key from "internal_key".  On success,
@@ -99,6 +102,7 @@ void AppendInternalKey(std::string* result, const ParsedInternalKey& key);
 bool ParseInternalKey(const Slice& internal_key, ParsedInternalKey* result);
 
 // Returns the user key portion of an internal key.
+// 返回一个 internal_key 的 user_key 部分，去掉后 8-byte 的合成序列号
 inline Slice ExtractUserKey(const Slice& internal_key) {
   assert(internal_key.size() >= 8);
   return Slice(internal_key.data(), internal_key.size() - 8);
@@ -106,6 +110,7 @@ inline Slice ExtractUserKey(const Slice& internal_key) {
 
 // A comparator for internal keys that uses a specified comparator for
 // the user key portion and breaks ties by decreasing sequence number.
+// 继承了比较器基类
 class InternalKeyComparator : public Comparator {
  private:
   const Comparator* user_comparator_;
@@ -113,6 +118,7 @@ class InternalKeyComparator : public Comparator {
  public:
   explicit InternalKeyComparator(const Comparator* c) : user_comparator_(c) {}
   const char* Name() const override;
+  // 核心函数
   int Compare(const Slice& a, const Slice& b) const override;
   void FindShortestSeparator(std::string* start,
                              const Slice& limit) const override;
@@ -124,6 +130,7 @@ class InternalKeyComparator : public Comparator {
 };
 
 // Filter policy wrapper that converts from internal keys to user keys
+// 从 InternalKey 解析出 user_key 进行操作
 class InternalFilterPolicy : public FilterPolicy {
  private:
   const FilterPolicy* const user_policy_;
@@ -149,11 +156,13 @@ class InternalKey {
     AppendInternalKey(&rep_, ParsedInternalKey(user_key, s, t));
   }
 
+  // Slice 转 std::string
   bool DecodeFrom(const Slice& s) {
     rep_.assign(s.data(), s.size());
     return !rep_.empty();
   }
 
+  // std::string 转 Slice
   Slice Encode() const {
     assert(!rep_.empty());
     return rep_;
@@ -171,6 +180,7 @@ class InternalKey {
   std::string DebugString() const;
 };
 
+// 对 rep_ 进行解析后再比较
 inline int InternalKeyComparator::Compare(const InternalKey& a,
                                           const InternalKey& b) const {
   return Compare(a.Encode(), b.Encode());

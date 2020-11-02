@@ -12,6 +12,8 @@
 #include "leveldb/status.h"
 #include "leveldb/table_builder.h"
 
+// 这个文件定义了 SSTable 的格式
+
 namespace leveldb {
 
 class Block;
@@ -20,8 +22,8 @@ struct ReadOptions;
 
 // BlockHandle is a pointer to the extent of a file that stores a data
 // block or a meta block.
-// BlockHandle 是指向 data 或 meta block 文件范围的指针
-// 存储 Block 数据所在的位置 offset_ 和长度 size_
+// BlockHandle 是指向 dataBlock 或 metaBlock 的指针
+// 存储 Block 所在的位置 offset_ 和长度 size_
 class BlockHandle {
  public:
   // Maximum encoding length of a BlockHandle
@@ -41,13 +43,16 @@ class BlockHandle {
   Status DecodeFrom(Slice* input);
 
  private:
+  // 目标 Block 在文件中的偏移量
   uint64_t offset_;
+  // 目标 Block 的长度
   uint64_t size_;
 };
 
 // Footer encapsulates the fixed information stored at the tail
 // end of every table file.
-// Footer 封装了存储在每个表文件尾部的固定信息，即存储上面两个 BlockHandle
+// Footer 封装了存储在每个 SSTable 文件尾部的固定信息，存储着 MetaIndexBlock 和 IndexBlock 这两个索引块的 BlockHandle
+// 即是索引的索引
 class Footer {
  public:
   // Encoded length of a Footer.  Note that the serialization of a

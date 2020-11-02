@@ -27,8 +27,15 @@
 // restarts[i] contains the offset within the block of the ith restart point.
 
 // LevelDB 存储键值对时，会利用局部性原理，将省略掉键与上一个键的共同前缀部分。
-// 并每隔 K=16 个键值队设定一个复活点完整存储键
-// Block 的结尾存储所有复活点的位置，查找时先在复活点上做二分查找，确定大概位置后再遍历恢复 Key 后对比。
+// 并每隔 K=16 个键值对设定一个复活点，存储一个完整的键
+// Block 的结尾存储所有复活点的位置，查找时先在复活点上做二分查找，确定大概位置后再遍历比较。
+
+// 存储格式如下
+// shared_bytes: varint32           # Key 与上一个键共享的长度
+// unshared_bytes: varint32         # Key 非共享长度
+// value_length: varint32           # Value 的长度
+// key_delta: char[unshared_bytes]  # Key 非共享部分
+// value: char[value_length]        # Value
 
 #include "table/block_builder.h"
 
@@ -64,7 +71,7 @@ size_t BlockBuilder::CurrentSizeEstimate() const {
 
 Slice BlockBuilder::Finish() {
   // Append restart array
-  // 将所有的复活点位置及复活点数量写到 buffer_ 里
+  // 将所有的复活点位置及数量写到 buffer_ 里
   for (size_t i = 0; i < restarts_.size(); i++) {
     PutFixed32(&buffer_, restarts_[i]);
   }

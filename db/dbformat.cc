@@ -50,9 +50,9 @@ int InternalKeyComparator::Compare(const Slice& akey, const Slice& bkey) const {
   //    increasing user key (according to user-supplied comparator)
   //    decreasing sequence number
   //    decreasing type (though sequence# should be enough to disambiguate)
-  // 首先使用 user_comparator_ 对 User Key 进行比较
+  // 首先使用 Comparator 对象 user_comparator_ 对 user_key 部分进行比较
   int r = user_comparator_->Compare(ExtractUserKey(akey), ExtractUserKey(bkey));
-  // 如果相等，则比较 SeqNumber，注意是降序排列
+  // 如果 user_key 相等，则比较合成序列号 SeqNumber，注意是降序排列，即序列号大的是后写入的数据
   if (r == 0) {
     const uint64_t anum = DecodeFixed64(akey.data() + akey.size() - 8);
     const uint64_t bnum = DecodeFixed64(bkey.data() + bkey.size() - 8);
