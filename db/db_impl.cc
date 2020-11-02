@@ -565,6 +565,7 @@ void DBImpl::CompactMemTable() {
   if (s.ok()) {
     edit.SetPrevLogNumber(0);
     edit.SetLogNumber(logfile_number_);  // Earlier logs no longer needed
+    // 更新文件状态
     s = versions_->LogAndApply(&edit, &mutex_);
   }
 
@@ -1346,7 +1347,7 @@ Status DBImpl::MakeRoomForWrite(bool force) {
     } else if (allow_delay && versions_->NumLevelFiles(0) >=
                                   config::kL0_SlowdownWritesTrigger) {
       // 如果允许延迟且现有的 L0 文件超过 8 个，则释放锁、等待 1ms 、再加锁，并且不允许再次等待；
-      // 这个操作因为写入过多，L0 合并压力大，延迟写操作
+      // 这个操作是因为写入过多，L0 合并压力大，延迟写操作
       // We are getting close to hitting a hard limit on the number of
       // L0 files.  Rather than delaying a single write by several
       // seconds when we hit the hard limit, start delaying each

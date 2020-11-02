@@ -25,15 +25,15 @@ namespace config {
 static const int kNumLevels = 7;
 
 // Level-0 compaction is started when we hit this many files.
-// L0 文件数量超过 4 个，合并入 L1 
+// Level-0 文件数量超过 4 个，合并入 L1 
 static const int kL0_CompactionTrigger = 4;
 
 // Soft limit on number of level-0 files.  We slow down writes at this point.
-// L0 文件数量超过 8 个，减慢写入速度
+// Level-0 文件数量超过 8 个，减慢写入速度
 static const int kL0_SlowdownWritesTrigger = 8;
 
 // Maximum number of level-0 files.  We stop writes at this point.
-// L0 文件数量超过 12 个，停止写入
+// Level-0 文件数量超过 12 个，停止写入
 static const int kL0_StopWritesTrigger = 12;
 
 // Maximum level to which a new compacted memtable is pushed if it
@@ -42,6 +42,7 @@ static const int kL0_StopWritesTrigger = 12;
 // expensive manifest file operations.  We do not push all the way to
 // the largest level since that can generate a lot of wasted disk
 // space if the same key space is being repeatedly overwritten.
+// ImMemTable 最对写入 Level-2
 static const int kMaxMemCompactLevel = 2;
 
 // Approximate gap in bytes between samples of data read during iteration.
