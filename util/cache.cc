@@ -199,7 +199,7 @@ class LRUCache {
  private:
   void LRU_Remove(LRUHandle* e);
   void LRU_Append(LRUHandle* list, LRUHandle* e);
-  // Ref 和 Unref 分别增删引用计数，并完成节点在 lru_ 和 in_use_ 的交换
+  // Ref() 和 Unref() 函数分别增删引用计数，并完成节点在 lru_ 和 in_use_ 的交换
   void Ref(LRUHandle* e);
   void Unref(LRUHandle* e);
   bool FinishErase(LRUHandle* e) EXCLUSIVE_LOCKS_REQUIRED(mutex_);
@@ -216,15 +216,16 @@ class LRUCache {
   // Dummy head of LRU list.
   // lru.prev is newest entry, lru.next is oldest entry.
   // Entries have refs==1 and in_cache==true.
-  // LRU 链表的头部，LRUCache 存储了两条链表，lru_ 记录普通节点
+  // LRUCache 存储了两条链表，
+  // LRU 链表的头部，lru_ 记录普通节点
   LRUHandle lru_ GUARDED_BY(mutex_);
 
   // Dummy head of in-use list.
   // Entries are in use by clients, and have refs >= 2 and in_cache==true.
-  // in_use_ 记录外部正在使用的节点
+  // in_use_ 链表的头部，记录应用程序正在使用的节点
   LRUHandle in_use_ GUARDED_BY(mutex_);
 
-  // 哈希表，用来在缓存中实现快速查找
+  // 哈希表用来在缓存中实现快速查找某个
   HandleTable table_ GUARDED_BY(mutex_);
 };
 
@@ -379,7 +380,7 @@ static const int kNumShardBits = 4;
 static const int kNumShards = 1 << kNumShardBits;
 
 // 多线程调用时，每个线程访问缓冲区的时候都会将缓冲区锁住，ShardedLRUCache 内部有 16 个 LRUCache，查找 Key 时先计算 key 属于哪一个分片，
-// 分片的计算方法是取32位 hash 值的高4位，然后在相应的 LRUCache 中进行查找，这样就大大减少了多线程访问的锁开销。
+// 分片的计算方法是取 32bit hash 值的高4位，然后在相应的 LRUCache 中进行查找，这样就大大减少了多线程访问的锁开销。
 
 // ShardedLRUCache 的主要作用就是计算 hash，选择 hash 选择 LRUCache ，然后调用 LRUCache 的函数。
 class ShardedLRUCache : public Cache {
